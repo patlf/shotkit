@@ -1,0 +1,51 @@
+{
+  "name": "shotkit",
+  "version": "0.1.0",
+  "description": "Screenshots that look like a product shipped them — clean capture, real crop, backdrop, layered shadow, window chrome and annotations. An agent skill and a CLI.",
+  "type": "module",
+  "license": "MIT",
+  "author": "patlf",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/patlf/shotkit.git"
+  },
+  "homepage": "https://github.com/patlf/shotkit#readme",
+  "bugs": "https://github.com/patlf/shotkit/issues",
+  "bin": {
+    "shotkit": "scripts/shotkit.mjs"
+  },
+  "files": [
+    "scripts",
+    "references",
+    "SKILL.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "screenshot",
+    "screenshots",
+    "cleanshot",
+    "shottr",
+    "screely",
+    "device-frame",
+    "drop-shadow",
+    "annotations",
+    "playwright",
+    "claude",
+    "claude-code",
+    "agent-skill",
+    "skill"
+  ],
+  "peerDependencies": {
+    "playwright": ">=1.40"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "help": "node scripts/shotkit.mjs"
+  }
+}
