@@ -37,28 +37,70 @@ Most bad screenshots are lost at step 1 or 2, and no amount of step 3 gets them 
 ## Quick start
 
 ```bash
-S="shotkit"                                    # installed via npm
-# S="node /path/to/shotkit/scripts/shotkit.mjs"  # cloned as a skill
+# Installed as a skill (npx skills add / git clone):
+S="node $HOME/.claude/skills/shotkit/scripts/shotkit.mjs"
+# Installed as a dependency of the project:
+# S="npx shotkit"
 
 # Capture a live page and frame it in one pass
-node "$S" capture http://localhost:3000 --out shots/hero.png \
+$S capture http://localhost:3000 --out shots/hero.png \
     --selector ".app-shell" --viewport 1440x900 --preset mac --title "Acme"
 
 # Frame a screenshot you already have (or one from ⌘⇧4 / Shottr / CleanShot)
-node "$S" frame raw.png --out shots/hero.png --preset clean
+$S frame raw.png --out shots/hero.png --preset clean
 
 # Frame a whole set consistently
-node "$S" frame raw/*.png --out shots/ --preset clean --scale 2
+$S frame raw/*.png --out shots/ --preset clean --scale 2
 
 # Audit what you have
-node "$S" check shots/
+$S check shots/
 
 # Shrink PNGs a pipeline you already have produced
-node "$S" optimize shots/ --max-kb 400
+$S optimize shots/ --max-kb 400
 ```
 
 No dependencies. It uses Playwright if the project has it, otherwise a local Chrome/Chromium.
 `capture` needs Playwright; `frame` and `check` work with either.
+
+## Step 0 — Decide the style once
+
+A set of screenshots has one style or it has none. Settle it before the first capture, apply it
+to every shot, and say it out loud — the next person to add a screenshot has to be able to match
+it without guessing.
+
+**Derive it from the project if the project says anything, and only ask when it doesn't.** In
+order:
+
+| Read | What it settles |
+| --- | --- |
+| `PRODUCT.md`, `DESIGN.md` | Register, which is the decision everything else follows from. A product that describes itself as a tool, an instrument, something you work *in* takes `auto` or a quiet backdrop and no mesh — a campaign surface behind a working UI reads as a product that is being sold rather than used. A product whose landing page *is* the product can carry `solid` or `mesh`. |
+| The existing screenshots | If the repo already ships shots, match them. `check` a directory to read back the sizes, and look at what preset, backdrop and padding they used. A set half in the old style is worse than a set entirely in either. |
+| The design tokens | The CSS custom properties, the theme file, the Tailwind config. A backdrop built from the product's own surface colours belongs to the page in a way a named backdrop never quite does — pass them as `linear:<a>,<b>` rather than reaching for the table below. |
+| Where the shot will sit | A README renders on both a light and a dark GitHub page, so `docs` or `bare`. A tile or card that already has its own shadow and radius takes `bare`. A hero sits on a surface the page already owns. |
+| Whether the product has themes | If the site or the docs ship light and dark, so do the screenshots — two captures, `<picture>` + `prefers-color-scheme`. This is not a style question and does not need asking. |
+
+If those come back empty — no PRODUCT.md, no existing shots, nothing in the tokens — ask once,
+in a single round. Four questions at most, each carrying a default, and then proceed:
+
+1. **Where will these be seen?** README / docs / landing page / changelog or social / store listing
+2. **How loud?** Quiet, derived from the shot *(default)* — or one saturated house colour
+3. **Is "this is an app" part of the message?** No chrome *(default)* / macOS window / browser with URL bar
+4. **Light, dark, or both?**
+
+Do not ask what is already sitting in the repo, and do not ask a fifth question. The point is to
+avoid rendering forty images in a style the project was never going to accept — not to run a
+survey before every screenshot.
+
+Either way, state the choice in one line before rendering anything — *"clean preset, `auto`
+backdrop, no chrome, light and dark, 30px padding"* — so it gets corrected once instead of forty
+times. Then record it where the project keeps its design decisions, next to the command that
+reproduces the set. A style nobody wrote down lasts exactly as long as the session that chose it.
+
+**Replacing an existing set is the same decision, plus one.** Old shots were captured at some
+scale, cropped at some height and framed in some style, and the new ones have to agree with the
+layout that was built around them, not just with each other. Measure the slot they go into before
+you capture: the rendered width in the page, the breakpoint where that width changes, and whether
+anything crops or bleeds them. Then capture at a scale that covers the largest of those.
 
 ## Step 1 — Capture
 
@@ -102,7 +144,7 @@ runs through a large region or a whole repeated row, never through a single line
 
 ## Step 3 — Frame
 
-Pick one preset and use it for the entire set. Mixing presets is what makes a gallery look
+Use the preset chosen in Step 0 for the entire set. Mixing presets is what makes a gallery look
 assembled from whatever was lying around.
 
 | Preset | Backdrop | Chrome | Use for |
@@ -135,7 +177,7 @@ or `docs`. Two shadows on one object looks like a mistake, because it is one.
 ## Backdrops
 
 `--bg` is the single biggest lever on how a screenshot reads. Run
-`node "$S"` with no arguments for the full list.
+`$S` with no arguments for the full list.
 
 | | |
 | --- | --- |
@@ -209,7 +251,7 @@ Step 2 — a fade through a single line of type still looks like an accident.
 ## Step 4 — Check
 
 ```bash
-node "$S" check shots/
+$S check shots/
 ```
 
 Reports, and exits non-zero on:
@@ -238,7 +280,7 @@ convolution, and with the font and layout known a short string like a six-digit 
 brute-forced back out of it; quantising to blocks throws the information away instead.
 
 ```bash
-node "$S" frame raw.png --out out.png --preset clean --annotate anno.json --accent "#e5484d"
+$S frame raw.png --out out.png --preset clean --annotate anno.json --accent "#e5484d"
 ```
 
 The full shape spec, and guidance on how many annotations one image can carry, is in
