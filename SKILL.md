@@ -37,8 +37,10 @@ Most bad screenshots are lost at step 1 or 2, and no amount of step 3 gets them 
 ## Quick start
 
 ```bash
-# Installed as a skill (npx skills add / git clone):
-S="node $HOME/.claude/skills/shotkit/scripts/shotkit.mjs"
+# Installed into this project (npx skills add patlf/shotkit):
+S="node .claude/skills/shotkit/scripts/shotkit.mjs"
+# Installed globally (npx skills add -g patlf/shotkit):
+# S="node $HOME/.claude/skills/shotkit/scripts/shotkit.mjs"
 # Installed as a dependency of the project:
 # S="npx shotkit"
 
