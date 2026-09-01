@@ -46,6 +46,7 @@
     }
   },
   "scripts": {
-    "help": "node scripts/shotkit.mjs"
+    "help": "node scripts/shotkit.mjs",
+    "docs": "node docs/make.mjs"
   }
 }

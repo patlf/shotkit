@@ -6,9 +6,18 @@ A capture-and-frame tool in the spirit of [Shottr](https://shottr.cc), [CleanSho
 and [Screely](https://screely.com) — but driven from a command line, so it belongs in a build
 script and in an agent's hands rather than in a menu bar. It ships as both a **CLI** and an
 **agent skill**: the skill file carries the judgement about *when* to reach for which part, which
-is most of what separates a good screenshot from a decorated one.
+is most of what separates a good screenshot from a decorated one — starting with settling the
+backdrop, finish and corner radius with you *before* it renders forty images in a style nobody
+chose.
 
-![A raw panel crop, and the same file framed](docs/before-after.png)
+![A raw panel crop, and the same file framed on a cobalt backdrop](docs/before-after.png)
+
+The same panel, a different decision — dark capture, macOS chrome, and no backdrop at all: it
+dissolves into the page instead of sitting on one. The style is something you settle once and
+apply to the whole set, which is why the skill asks before it renders anything rather than
+handing you a default nobody chose:
+
+![The same panel in dark mode, in a macOS window, dissolving into the page](docs/before-after-hero.png)
 
 No dependencies. It renders the frame as HTML and screenshots it, using Playwright if the project
 has it and a local Chrome/Chromium otherwise.
@@ -103,7 +112,11 @@ amounts, which bends the ramp. Adding a hue is one line.
 
 - **`--fade bottom`** dissolves an edge into the backdrop instead of slicing it, and the mask
   covers the shadow too — a shot that dissolves while still casting a hard shadow underneath looks
-  broken. The honest fix when a panel is genuinely taller than its space.
+  broken. The honest fix when a panel is genuinely taller than its space. With
+  **`--bg transparent`** it fades out to real alpha instead, so the shot blends into whatever the
+  page already is — one RGBA file that is right on a light page and a dark one at once.
+- **`--radius`** is in the source page's own CSS pixels, so it is directly comparable to the radii
+  inside the shot. Match the outermost radius the UI itself uses; presets ship 8–14.
 - **`--pad "30 30 0"`** takes one to four values in CSS order, and a zero edge bleeds the shot off
   that side, squaring off its corners there. Containing a very tall shot instead means shrinking
   its type past reading.
