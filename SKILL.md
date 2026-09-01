@@ -54,6 +54,9 @@ $S frame raw.png --out shots/hero.png --preset clean
 # Frame a whole set consistently
 $S frame raw/*.png --out shots/ --preset clean --scale 2
 
+# Dissolve into the page instead of sitting on a backdrop — one file, both themes
+$S frame raw.png --out shots/hero.png --preset clean --bg transparent --fade bottom --radius 12
+
 # Audit what you have
 $S check shots/
 
@@ -64,39 +67,75 @@ $S optimize shots/ --max-kb 400
 No dependencies. It uses Playwright if the project has it, otherwise a local Chrome/Chromium.
 `capture` needs Playwright; `frame` and `check` work with either.
 
-## Step 0 — Decide the style once
+## Step 0 — Agree the style before rendering anything
 
-A set of screenshots has one style or it has none. Settle it before the first capture, apply it
-to every shot, and say it out loud — the next person to add a screenshot has to be able to match
-it without guessing.
+**Do not render a set until the style has been agreed out loud.** Not one sample shot first, not
+"defaults now, adjust later" — the defaults are a house style, and a house style nobody chose is
+what people mean when they say screenshots look generic. Rendering first also makes the correction
+expensive: by the time it comes there are forty images and a page pointing at them.
 
-**Derive it from the project if the project says anything, and only ask when it doesn't.** In
-order:
+Read the project first, but read it to decide *what to propose* — not to decide whether to ask.
 
 | Read | What it settles |
 | --- | --- |
 | `PRODUCT.md`, `DESIGN.md` | Register, which is the decision everything else follows from. A product that describes itself as a tool, an instrument, something you work *in* takes `auto` or a quiet backdrop and no mesh — a campaign surface behind a working UI reads as a product that is being sold rather than used. A product whose landing page *is* the product can carry `solid` or `mesh`. |
 | The existing screenshots | If the repo already ships shots, match them. `check` a directory to read back the sizes, and look at what preset, backdrop and padding they used. A set half in the old style is worse than a set entirely in either. |
-| The design tokens | The CSS custom properties, the theme file, the Tailwind config. A backdrop built from the product's own surface colours belongs to the page in a way a named backdrop never quite does — pass them as `linear:<a>,<b>` rather than reaching for the table below. |
-| Where the shot will sit | A README renders on both a light and a dark GitHub page, so `docs` or `bare`. A tile or card that already has its own shadow and radius takes `bare`. A hero sits on a surface the page already owns. |
-| Whether the product has themes | If the site or the docs ship light and dark, so do the screenshots — two captures, `<picture>` + `prefers-color-scheme`. This is not a style question and does not need asking. |
+| The design tokens | The CSS custom properties, the theme file, the Tailwind config. A backdrop built from the product's own surface colours belongs to the page in a way a named backdrop never quite does — pass them as `linear:<a>,<b>` rather than reaching for the table below. The same file gives you the radius the UI actually uses. |
+| Where the shot will sit | A README renders on both a light and a dark GitHub page, so `docs`, `bare` or a dissolve. A tile or card that already has its own shadow and radius takes `bare`. A hero sits on a surface the page already owns. |
+| Whether the product has themes | If the site or the docs ship light and dark, so do the screenshots — two captures, `<picture>` + `prefers-color-scheme`. This one is settled by the repo, not by taste. |
 
-If those come back empty — no PRODUCT.md, no existing shots, nothing in the tokens — ask once,
-in a single round. Four questions at most, each carrying a default, and then proceed:
+Then ask, in a **single round**: one message carrying every question, each with the default you
+derived, so "all defaults" is a valid one-word answer. In Claude Code that is one
+`AskUserQuestion` call with four questions in it, not four turns of interrogation. If the request
+has not already said where the shots will be seen — README, docs, landing page, changelog, store
+listing — establish that first, because it decides the rest.
 
-1. **Where will these be seen?** README / docs / landing page / changelog or social / store listing
-2. **How loud?** Quiet, derived from the shot *(default)* — or one saturated house colour
-3. **Is "this is an app" part of the message?** No chrome *(default)* / macOS window / browser with URL bar
-4. **Light, dark, or both?**
+**1. Backdrop.** Never ask this open-endedly. "What background do you want?" hands the design
+back to the person who asked you to do it. Offer the derived default, two named candidates that
+suit the register you just read, and both escape hatches:
 
-Do not ask what is already sitting in the repo, and do not ask a fifth question. The point is to
-avoid rendering forty images in a style the project was never going to accept — not to run a
-survey before every screenshot.
+| | |
+| --- | --- |
+| `auto` *(default)* | derived from the shot's own edge pixels — it cannot clash, because every colour in it came from the shot |
+| `blur` | the shot itself, scaled up and defocused behind itself; CleanShot's signature |
+| a named backdrop | propose **two by name** out of the quiet / solid / mesh tables below — not the whole list |
+| the project's own colours | `linear:<a>,<b>` straight out of the design tokens |
+| an image they supply | a wallpaper, a brand texture, a photo — `image:<path>`, and say up front that it needs `--bg-blur 40 --bg-dim .45` or the UI on top of it is unreadable |
+
+Quote the cost while you are asking: a mesh or solid backdrop is ~200 KB per shot before
+`--optimize`, where `auto` and the quiet family are ~60.
+
+**2. Finish** — how the shot meets whatever is behind it.
+
+| | |
+| --- | --- |
+| framed *(default)* | padding on four sides, layered shadow, hairline rim |
+| **dissolve** | `--bg transparent --fade bottom`. The shot fades out to real alpha and blends into whatever the page already is — Linear's look. It carries no backdrop of its own, so it is correct in light and dark at once, and it is the honest answer when the panel is taller than the slot it has to live in. |
+| **bleed** | `--pad "30 30 0"` — the shot runs off one edge, but the backdrop stays |
+| **tilt** | `--tilt -14` — a landing-page hero, once. It dates fast. |
+
+**3. Corners.** `--radius` is measured in the source page's own CSS pixels, so it is directly
+comparable to the radii inside the shot: 12px cards sitting in a 4px frame read as two products
+photographed together. Match the outermost radius the UI itself uses — the window, the panel, the
+card the crop runs out to — or go one step above it. The presets ship 8–14. With `--chrome mac`
+the frame is impersonating a macOS window, and those are ~10–12; a 24 there stops reading as a
+window and starts reading as a sticker. `--radius 0` is a real choice for a technical register,
+and never a good accident.
+
+**4. Chrome.** No chrome *(default)*, macOS window, or browser with a URL bar. Ask it as *is
+"this is an app" part of the message?* — chrome is a claim about what the reader is looking at,
+rather than a decoration. Light, dark or both rides along here if the table above did not already
+settle it.
+
+Four questions is the ceiling. Do not ask back something the repo already answers — propose it as
+the default and move on — and if the request already named the style outright ("dark, no chrome,
+on our purple"), that *is* the answer: skip the round and go straight to stating it.
 
 Either way, state the choice in one line before rendering anything — *"clean preset, `auto`
-backdrop, no chrome, light and dark, 30px padding"* — so it gets corrected once instead of forty
-times. Then record it where the project keeps its design decisions, next to the command that
-reproduces the set. A style nobody wrote down lasts exactly as long as the session that chose it.
+backdrop, dissolve at the bottom, 12px corners, no chrome, light and dark"* — so it gets corrected
+once instead of forty times. Then record it where the project keeps its design decisions, next to
+the command that reproduces the set. A style nobody wrote down lasts exactly as long as the
+session that chose it.
 
 **Replacing an existing set is the same decision, plus one.** Old shots were captured at some
 scale, cropped at some height and framed in some style, and the new ones have to agree with the
@@ -149,15 +188,21 @@ runs through a large region or a whole repeated row, never through a single line
 Use the preset chosen in Step 0 for the entire set. Mixing presets is what makes a gallery look
 assembled from whatever was lying around.
 
-| Preset | Backdrop | Chrome | Use for |
-| --- | --- | --- | --- |
-| `clean` | derived from the shot | none | The default. A UI region, a panel, a component. |
-| `mac` | derived | macOS title bar | A desktop app, or a whole window. |
-| `browser` | slate | URL bar | Anything where "this is a website" is the point. |
-| `hero` | derived | macOS | Above the fold. Generous padding, tall shadow. |
-| `docs` | transparent | none | Inline in a README or docs page. |
-| `flat` | derived | none | Dense grids, where shadows on every tile become noise. |
-| `bare` | transparent | none | Rounded corners only, for placing on a page that supplies its own background. |
+| Preset | Backdrop | Chrome | Radius | Use for |
+| --- | --- | --- | --- | --- |
+| `clean` | derived from the shot | none | 10 | The default. A UI region, a panel, a component. |
+| `mac` | derived | macOS title bar | 12 | A desktop app, or a whole window. |
+| `browser` | slate | URL bar | 12 | Anything where "this is a website" is the point. |
+| `hero` | derived | macOS | 14 | Above the fold. Generous padding, tall shadow. |
+| `docs` | transparent | none | 8 | Inline in a README or docs page. |
+| `flat` | derived | none | 8 | Dense grids, where shadows on every tile become noise. |
+| `bare` | transparent | none | 10 | Rounded corners only, for placing on a page that supplies its own background. |
+
+Every number in that table is a starting point rather than a setting — `--bg`, `--pad`, `--shadow`
+and `--radius` each override the preset they came with. Radius is the one worth overriding most
+often, for the reason in Step 0: it is in the same CSS pixels as the UI inside the shot, so a
+frame whose corners disagree with the corners already visible in the screenshot reads as two
+objects rather than one.
 
 Three things the renderer does that are worth knowing about, because they are the things
 that usually get done wrong by hand:
@@ -190,7 +235,7 @@ or `docs`. Two shadows on one object looks like a mistake, because it is one.
 | **mesh** — `aurora` `ember` `tide` `orchid` `moss` `sunset` `noir` `porcelain` | A base colour with three offset radial bleeds, which is what makes a mesh read as light rather than as a gradient. Use at the top of a landing page, where the image is an object on a surface and the surface is allowed to be one. `porcelain` is the only light member. |
 | **`image:<path>`** | A photo or wallpaper. Pair with `--bg-blur 40` and `--bg-dim .45` — an unblurred photo behind a UI screenshot makes the UI unreadable, every time. |
 | **`grid:` / `dots:`** | `grid:#dfe3e8,#f8f9fa,26` — line colour, ground, step. Reads as technical rather than promotional; good for developer products. |
-| **`transparent`** | Real alpha, including through the shadow. For placing on a page that supplies its own ground. |
+| **`transparent`** | Real alpha, including through the shadow. For placing on a page that supplies its own ground; with `--fade` it becomes the dissolve. |
 | custom | `mesh:<base>,<a>,<b>`, `linear:<a>,<b>[,deg]`, `radial:<a>,<b>`, or any CSS background value. |
 
 The `solid` family is generated from one OKLCH triple per hue rather than written as CSS.
@@ -229,16 +274,27 @@ thing means scaling it down until the type stops being readable, which costs the
 the crop does. Match the shadow to the padding: `soft` reaches 64px and a 30px margin will clip it
 square.
 
-## When the crop has to cut anyway
+## Fading an edge, and the dissolve
 
-`--fade bottom` dissolves an edge into the backdrop instead of slicing it. The mask covers the
-shadow too, so the shot does not dissolve while still casting a hard shadow underneath, and the
-corners on that edge go square because content that continues does not have a rounded corner.
-`--fade-depth` controls how far in the fade starts (default `0.28`).
+`--fade bottom` dissolves an edge instead of slicing it. The mask covers the shadow too, so the
+shot does not dissolve while still casting a hard shadow underneath, and the corners on that edge
+go square because content that continues does not have a rounded corner. `--fade-depth` controls
+how far in the fade starts (default `0.28`).
 
-This is the honest fix when a panel is genuinely taller than the space: a hard cut says "this is
-all there is" and is wrong, a fade says "this continues" and is true. It is not a licence to skip
-Step 2 — a fade through a single line of type still looks like an accident.
+It does two different jobs, depending on what is behind it:
+
+- **Into a backdrop.** The honest fix when a panel is genuinely taller than the space it has to
+  live in: a hard cut says "this is all there is" and is wrong, a fade says "this continues" and
+  is true.
+- **Into nothing.** `--bg transparent --fade bottom` fades the shot out to real alpha, so it
+  blends into whatever surface the page itself supplies — the look Linear uses on its marketing
+  pages. The output is RGBA, it needs no backdrop decision at all, and it is right on a light page
+  and a dark one at once, which makes it a strong default for a README. Pair it with `clean`, not
+  `bare`: `bare` pads to zero, a zero edge squares its corners by design, and that leaves
+  `--radius` nothing to round.
+
+Neither is a licence to skip Step 2 — a fade through a single line of type still looks like an
+accident.
 
 ## Other things worth reaching for
 
@@ -301,6 +357,8 @@ The full shape spec, and guidance on how many annotations one image can carry, i
 | Text visible through a `blur` annotation | Use `pixelate` or `redact` — blur is not redaction |
 | Set looks messy in a grid | Mixed presets or mixed sizes — `check` a directory to confirm |
 | Framed shot looks worse than the raw one | The shot is going somewhere that already frames it; use `bare` |
+| Frame's corners disagree with the UI's | `--radius` left at whatever the preset shipped; match the shot's own outer radius |
+| `--radius` appears to do nothing | A `--pad 0` edge or a `--fade` edge squares its own corners by design — and `bare` pads to zero on all four |
 
 ## Sources other than a browser
 
